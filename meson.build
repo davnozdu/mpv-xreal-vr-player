@@ -1833,6 +1833,15 @@ major = client_h_define.split('|')[0].split('<<')[0].strip('() ')
 minor = client_h_define.split('|')[1].strip('() ')
 client_api_version = major + '.' + minor + '.0'
 
+if features['videotoolbox-pl']
+    # Separate dylib: dyld ignores __interpose in the main executable.
+    vt_metal_buffers = shared_library('vt-metal-buffers', 'osdep/mac/vt_metal_buffers.c',
+        dependencies: dependency('appleframeworks',
+                                 modules: ['CoreFoundation', 'CoreVideo', 'VideoToolbox']),
+        install: true)
+    dependencies += declare_dependency(link_with: vt_metal_buffers)
+endif
+
 libmpv = library('mpv', sources, dependencies: dependencies, gnu_symbol_visibility: 'hidden',
                  include_directories: incdir_public,
                  link_args: cc.get_supported_link_arguments(['-Wl,-Bsymbolic']),

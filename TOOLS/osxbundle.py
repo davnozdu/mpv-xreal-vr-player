@@ -90,7 +90,10 @@ def main():
 
     if options.deps:
         print("> bundling dependencies")
-        dylib_unhell.process(target_binary(binary_name))
+        # The copied binary's @loader_path no longer points at libraries
+        # built alongside it, so also search the build directory.
+        dylib_unhell.process(target_binary(binary_name),
+                             [os.path.abspath(build_path or ".")])
 
     print("> signing bundle with ad-hoc pseudo identity")
     sign_bundle(binary_name)

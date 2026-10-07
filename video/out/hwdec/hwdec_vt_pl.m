@@ -33,6 +33,7 @@
 #include "video/out/gpu/hwdec.h"
 #include "video/out/placebo/ra_pl.h"
 #include "video/mp_image_pool.h"
+#include "osdep/mac/vt_metal_buffers.h"
 
 #if HAVE_VULKAN
 #include "video/out/vulkan/common.h"
@@ -307,6 +308,10 @@ bool vt_pl_init(const struct ra_hwdec *hw)
     p->interop_uninit = mapper_uninit;
     p->interop_map    = mapper_map;
     p->interop_unmap  = mapper_unmap;
+
+    // Mapping goes through CVMetalTextureCache; OpenGL compatibility only
+    // slows down the hardware decoder.
+    mp_vt_set_metal_buffers(true);
 
     return true;
 }

@@ -33,6 +33,10 @@
 #include "video/out/opengl/ra_gl.h"
 #include "hwdec_vt.h"
 
+#if HAVE_VIDEOTOOLBOX_PL
+#include "osdep/mac/vt_metal_buffers.h"
+#endif
+
 static bool check_hwdec(const struct ra_hwdec *hw)
 {
     if (!ra_is_gl(hw->ra_ctx->ra))
@@ -166,6 +170,10 @@ bool vt_gl_init(const struct ra_hwdec *hw)
     p->interop_uninit = mapper_uninit;
     p->interop_map    = mapper_map;
     p->interop_unmap  = mapper_unmap;
+
+#if HAVE_VIDEOTOOLBOX_PL
+    mp_vt_set_metal_buffers(false);
+#endif
 
     return true;
 }

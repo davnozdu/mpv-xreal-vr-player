@@ -90,6 +90,7 @@ for f in sorted(MACOS.rglob('*')):
         subprocess.run(['codesign', '--force', '--sign', '-', str(f)], check=True)
 subprocess.run(['codesign', '--force', '--sign', '-', str(APP)], check=True)
 subprocess.run(['codesign', '--verify', '--deep', '--strict', str(APP)], check=True)
+assert (MACOS / 'lib/libvt-metal-buffers.dylib').is_file(), 'VideoToolbox buffer hook is not bundled'
 # Check relocatability: no library may still link to Homebrew or the workspace.
 for f in [MACOS / 'xreal-vr-player', *sorted((MACOS / 'lib').glob('*.dylib'))]:
     linked = subprocess.check_output(['otool', '-L', str(f)], text=True)

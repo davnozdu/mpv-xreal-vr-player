@@ -15,6 +15,10 @@ assert settings['videotoolbox-pl'] == 'enabled'
 assert settings['vulkan'] == 'enabled'
 architecture = subprocess.check_output(['lipo', '-archs', str(binary)], text=True).strip()
 assert architecture == 'arm64', architecture
+# Without this library FFmpeg requests OpenGL-compatible VideoToolbox buffers,
+# which cut 8K HEVC hardware decoding from ~110 to ~50 fps on an M2 Pro.
+linked = subprocess.check_output(['otool', '-L', str(binary)], text=True)
+assert 'libvt-metal-buffers.dylib' in linked, linked
 def help_option(option):
     result = subprocess.run([str(binary), '--no-config', option], capture_output=True, text=True)
     return result.stdout + result.stderr
@@ -24,12 +28,13 @@ assert 'videotoolbox' in decoders, decoders
 assert 'macvk' in contexts, contexts
 report = {'architecture': architecture, 'release': True, 'optimization': 3, 'lto': True,
           'hardware_decoder': 'VideoToolbox', 'hardware_metal_interop': True,
+          'videotoolbox_buffers': 'Metal-compatible, without OpenGL compatibility',
           'gpu_context': 'macvk (Vulkan via MoltenVK/Metal)',
           'projection': 'GPU shader; no CPU v360 or copy-back filter',
           'runtime_defaults': 'gpu-next,gpu / vulkan / macvk / hwdec=auto-safe / macos-render-timer=system',
-          'playback_optimization': 'bilinear scaling; automatic CPU trial for sustained 8K VideoToolbox drops',
+          'playback_optimization': 'bilinear scaling; Metal-only VideoToolbox buffers; automatic CPU trial for sustained 8K VideoToolbox drops',
           'hardware_runtime_test': 'requires actual video and display; this audit verifies build capabilities'}
 out = ROOT / 'xreal/test-output'
 out.mkdir(exist_ok=True)
 (out / 'optimization-audit.json').write_text(json.dumps(report, indent=2))
-print('PASS: arm64, Release -O3, LTO, VideoToolbox, Metal interop, macvk')
+print('PASS: arm64, Release -O3, LTO, VideoToolbox, Metal interop, Metal-only VT buffers, macvk')

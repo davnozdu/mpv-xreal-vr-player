@@ -276,12 +276,12 @@ def remove_dev_tools_rapths(binary):
     for path in get_rpaths_dev_tools(binary):
         install_name_tool_delete_rpath(path, binary)
 
-def process(binary):
+def process(binary, rapths=None):
     binary = os.path.abspath(binary)
     if not os.path.exists(lib_path(binary)):
         os.makedirs(lib_path(binary))
     print(">> gathering all linked libraries")
-    libs, libs_rel = libraries(binary)
+    libs, libs_rel = libraries(binary, rapths=rapths)
 
     print(">> copying and processing all linked libraries")
     process_libraries(libs, libs_rel, binary)
