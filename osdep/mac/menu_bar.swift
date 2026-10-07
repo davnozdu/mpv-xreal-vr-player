@@ -272,7 +272,8 @@ class MenuBar: NSObject, EventSubscriber {
 
         if XREALController.isXREAL {
             let modes = [
-                ("Автоматически", "auto"), ("3D · Half SBS", "hsbs"), ("3D · Full SBS", "fsbs"),
+                ("Автоматически", "auto"), ("2D · обычное видео", "2d"),
+                ("3D · Half SBS", "hsbs"), ("3D · Full SBS", "fsbs"),
                 ("VR180 · SBS", "vr180"), ("VR360 · SBS", "vr360"),
                 ("VR180 · сверху/снизу", "vr180tb"), ("VR360 · сверху/снизу", "vr360tb")
             ]
@@ -287,6 +288,7 @@ class MenuBar: NSObject, EventSubscriber {
                 Config(name: "Вывод: автоматически", action: #selector(command(_:)), target: self, command: "script-message xreal-output auto"),
                 Config(name: "Вывод: Full SBS", action: #selector(command(_:)), target: self, command: "script-message xreal-output full"),
                 Config(name: "Вывод: Half SBS", action: #selector(command(_:)), target: self, command: "script-message xreal-output half"),
+                Config(name: "Вывод: без 3D (очки в 2D-режиме)", action: #selector(command(_:)), target: self, command: "script-message xreal-output mono"),
                 Config(type: .separator),
                 Config(name: "Показать состояние", action: #selector(command(_:)), target: self, command: "script-message xreal-status"),
                 Config(name: "Как смотреть в XREAL…", action: #selector(XREALController.showHelp), target: XREALController.shared)

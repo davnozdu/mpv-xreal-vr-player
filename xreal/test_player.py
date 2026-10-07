@@ -27,10 +27,11 @@ with tempfile.TemporaryDirectory(prefix='xreal-', dir='/tmp') as directory:
     def step(name, actions, expected, **checks):
         steps.append(dict(name=name, actions=actions, expected=expected, **checks))
 
-    step('open-SBS', [['loadfile', str(movie)]], {'resolved': 'hsbs'}, path=str(movie))
-    for mode in ['hsbs', 'fsbs', 'vr180', 'vr360', 'vr180tb', 'vr360tb']:
+    # Unmarked 16:9 cannot be told apart from Half SBS; ordinary 2D is the default.
+    step('open-unmarked', [['loadfile', str(movie)]], {'resolved': '2d', 'guessed': True}, path=str(movie))
+    for mode in ['2d', 'hsbs', 'fsbs', 'vr180', 'vr360', 'vr180tb', 'vr360tb']:
         step(f'mode-{mode}', [['script-message', 'xreal-mode', mode]], {'resolved': mode},
-             eye_aspect=16/9 if mode == 'hsbs' else 8/9)
+             eye_aspect=16/9 if mode in ('2d', 'hsbs') else 8/9)
     step('panorama-look', [['script-message', 'xreal-look', '20', '15']], {'yaw': 20, 'pitch': 15})
     step('swap-eyes', [['script-message', 'xreal-swap']], {'swapped': True})
     step('reset-look', [['script-message', 'xreal-reset']], {'yaw': 0, 'pitch': 0, 'fov': 70})
@@ -38,15 +39,21 @@ with tempfile.TemporaryDirectory(prefix='xreal-', dir='/tmp') as directory:
         step(f'output-{output}', [['script-message', 'xreal-output', 'auto'],
                                  ['script-message', 'xreal-display', output]], {'output': output}, aspect=ratio,
              mono=1 if output == 'preview' else 0)
+    step('output-mono', [['script-message', 'xreal-display', 'full'],
+                         ['script-message', 'xreal-output', 'mono']], {'output': 'mono'}, aspect=16/9, mono=1)
+    step('output-auto', [['script-message', 'xreal-output', 'auto'],
+                         ['script-message', 'xreal-display', 'preview']], {'output': 'preview'}, mono=1)
     step('auto-mode', [['script-message', 'xreal-mode', 'auto']], {'mode': 'auto'})
     for filename, expected in [('film-Full-SBS.mkv', 'fsbs'), ('film-Half-SBS.mkv', 'hsbs'),
-                               ('film-VR180-SBS.mkv', 'vr180'), ('film-VR360-TB-test.mkv', 'vr360tb')]:
+                               ('film.3D.SBS.mkv', 'hsbs'), ('film-3D.mkv', 'hsbs'),
+                               ('film-VR180-SBS.mkv', 'vr180'), ('film-VR360-TB-test.mkv', 'vr360tb'),
+                               ('film_1360x768.mkv', '2d'), ('film_1080p.mkv', '2d')]:
         path = temp / filename
         shutil.copy2(movie, path)
         step(f'auto-{filename}', [['loadfile', str(path)]], {'resolved': expected}, path=str(path))
     step('auto-8192x4096', [['loadfile', str(large)]], {'resolved': 'vr180', 'guessed': True}, path=str(large))
     step('remember-format', [['script-message', 'xreal-mode', 'vr360']], {'resolved': 'vr360'})
-    step('switch-file', [['loadfile', str(movie)]], {'resolved': 'hsbs'}, path=str(movie))
+    step('switch-file', [['loadfile', str(movie)]], {'resolved': '2d'}, path=str(movie))
     step('per-file-preference', [['loadfile', str(large)]], {'mode': 'vr360', 'resolved': 'vr360'}, path=str(large))
     scenario = temp / 'scenario.json'
     scenario.write_text(json.dumps(steps))

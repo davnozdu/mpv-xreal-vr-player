@@ -1,7 +1,7 @@
 //!PARAM xreal_mode
 //!TYPE int
 //!MINIMUM 0
-//!MAXIMUM 5
+//!MAXIMUM 6
 0
 
 //!PARAM eye_aspect
@@ -52,8 +52,10 @@ vec4 hook() {
     vec2 uv = xreal_mono == 1 ? HOOKED_pos : vec2(fract(HOOKED_pos.x * 2.0), HOOKED_pos.y);
     if (swap_eyes == 1) eye = 1.0 - eye;
     bool top_bottom = xreal_mode == 4 || xreal_mode == 5;
+    // Ordinary 2D video: both eyes see the whole frame.
+    bool whole_frame = xreal_mode == 6;
 
-    if (xreal_mode < 2) {
+    if (xreal_mode < 2 || whole_frame) {
         // Fit each view separately. Padding the combined SBS frame would mix
         // the two eye boundaries for letterboxed movies.
         float frame_aspect = 16.0 / 9.0;
@@ -84,9 +86,11 @@ vec4 hook() {
 
     // Clamp at the edge of the chosen eye, avoiding interpolation with the
     // other view at the SBS/TB boundary.
-    vec2 eye_size = HOOKED_size / (top_bottom ? vec2(1.0, 2.0) : vec2(2.0, 1.0));
+    vec2 eye_size = whole_frame ? HOOKED_size
+                         : HOOKED_size / (top_bottom ? vec2(1.0, 2.0) : vec2(2.0, 1.0));
     uv = clamp(uv, 0.5 / eye_size, 1.0 - 0.5 / eye_size);
-    vec2 source = top_bottom ? vec2(uv.x, (uv.y + eye) * 0.5)
-                            : vec2((uv.x + eye) * 0.5, uv.y);
+    vec2 source = whole_frame ? uv
+                : top_bottom ? vec2(uv.x, (uv.y + eye) * 0.5)
+                             : vec2((uv.x + eye) * 0.5, uv.y);
     return HOOKED_tex(source);
 }

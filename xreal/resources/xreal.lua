@@ -13,11 +13,11 @@ if o.prefs ~= '' then
     local decoded = contents and utils.parse_json(contents)
     if type(decoded) == 'table' then preferences = decoded end
 end
-local valid = {auto=true, hsbs=true, fsbs=true, vr180=true, vr360=true, vr180tb=true, vr360tb=true}
-local ids = {hsbs=0, fsbs=1, vr180=2, vr360=3, vr180tb=4, vr360tb=5}
-local labels = {hsbs='3D Half SBS', fsbs='3D Full SBS', vr180='VR180 SBS', vr360='VR360 SBS',
-                vr180tb='VR180 Top/Bottom', vr360tb='VR360 Top/Bottom'}
-local mode, resolved, guessed = 'auto', 'hsbs', false
+local valid = {auto=true, ['2d']=true, hsbs=true, fsbs=true, vr180=true, vr360=true, vr180tb=true, vr360tb=true}
+local ids = {hsbs=0, fsbs=1, vr180=2, vr360=3, vr180tb=4, vr360tb=5, ['2d']=6}
+local labels = {['2d']='2D · обычное видео', hsbs='3D Half SBS', fsbs='3D Full SBS', vr180='VR180 SBS',
+                vr360='VR360 SBS', vr180tb='VR180 Top/Bottom', vr360tb='VR360 Top/Bottom'}
+local mode, resolved, guessed = 'auto', '2d', false
 local display, output_override, yaw, pitch, fov, swapped = 'preview', 'auto', 0, 0, 70, false
 local overlay = mp.create_osd_overlay('ass-events')
 local overlay_visible = false
@@ -54,21 +54,32 @@ end
 
 local function auto_mode(params)
     local name = (mp.get_property('filename', '') or ''):lower()
-    local tb = name:find('top.?bottom') or name:find('[_. %-]tb[_. %-]') or name:find('over.?under')
-    if name:find('360') then return tb and 'vr360tb' or 'vr360', false end
-    if name:find('180') then return tb and 'vr180tb' or 'vr180', false end
-    if name:find('full.?sbs') or name:find('fsbs') then return 'fsbs', false end
-    if name:find('half.?sbs') or name:find('hsbs') then return 'hsbs', false end
     local w, h = params.w or 0, params.h or 1
     local aspect = w / math.max(1, h)
+    local tb = name:find('top.?bottom') or name:find('[_. %-]tb[_. %-]') or name:find('over.?under')
+    -- Numbers must stand alone: "1360x768" is not a 360° panorama.
+    if name:find('%f[%d]360%f[%D]') then return tb and 'vr360tb' or 'vr360', false end
+    if name:find('%f[%d]180%f[%D]') then return tb and 'vr180tb' or 'vr180', false end
+    if name:find('full.?sbs') or name:find('fsbs') then return 'fsbs', false end
+    if name:find('half.?sbs') or name:find('hsbs') then return 'hsbs', false end
+    if name:find('%f[%a]sbs%f[%A]') or name:find('%f[%w]3d%f[%W]') then
+        return aspect > 3 and 'fsbs' or 'hsbs', false
+    end
     -- This is a documented heuristic, not reliable projection metadata.
     if w >= 5760 and aspect > 1.8 and aspect < 2.2 then return 'vr180', true end
     if aspect > 3 then return 'fsbs', true end
-    return 'hsbs', true
+    -- An unmarked Half SBS movie has the same size as a 2D one. Showing a
+    -- stereo pair flat is less broken than splitting an ordinary movie.
+    return '2d', true
 end
 
 local function actual_output()
     return output_override == 'auto' and display or output_override
+end
+
+-- One view for the Mac screen or for glasses switched to their 2D mode.
+local function is_mono(output)
+    return output == 'preview' or output == 'mono'
 end
 
 local function draw()
@@ -90,7 +101,7 @@ local function draw()
         ass:new_event(); ass:append(string.format('{\\an5\\pos(%g,%g)\\fs%g\\fscx%d\\bord1.5\\shad0\\1c&HFFFFFF&}', x, h*0.5, size, squeeze))
         ass:append(text)
     end
-    if output == 'preview' then
+    if is_mono(output) then
         at(w*0.5, math.min(h*0.055, 25), 100)
     else
         at(w*0.25, math.min(h*0.05, 32), output == 'half' and 50 or 100)
@@ -111,7 +122,7 @@ local function apply()
     local output = actual_output()
     mp.set_property('video-aspect-override', output == 'full' and '32:9' or '16:9')
     if o.shaders ~= '' then
-        local shader = o.shaders .. (output == 'preview' and '/xreal-preview.glsl' or '/xreal.glsl')
+        local shader = o.shaders .. (is_mono(output) and '/xreal-preview.glsl' or '/xreal.glsl')
         if selected_shader ~= shader then
             mp.set_property_native('glsl-shaders', {shader})
             selected_shader = shader
@@ -120,10 +131,10 @@ local function apply()
     if not params or not params.w or not params.h then draw(); return end
     if mode == 'auto' then resolved, guessed = auto_mode(params) else resolved, guessed = mode, false end
     local dar = (params.dw or params.w) / math.max(1, params.dh or params.h)
-    local aspect = resolved == 'hsbs' and dar or dar * 0.5
+    local aspect = (resolved == 'hsbs' or resolved == '2d') and dar or dar * 0.5
     mp.set_property('glsl-shader-opts', string.format(
         'xreal_mode=%d,xreal_mono=%d,eye_aspect=%.8f,swap_eyes=%d,yaw=%.4f,pitch=%.4f,fov=%.4f',
-        ids[resolved], output == 'preview' and 1 or 0, math.min(10, math.max(0.1, aspect)), swapped and 1 or 0, yaw, pitch, fov))
+        ids[resolved], is_mono(output) and 1 or 0, math.min(10, math.max(0.1, aspect)), swapped and 1 or 0, yaw, pitch, fov))
     mp.set_property_native('user-data/xreal', {mode=mode, resolved=resolved, guessed=guessed,
         output=output, eye_aspect=aspect, yaw=yaw, pitch=pitch, fov=fov, swapped=swapped})
 end
@@ -152,7 +163,7 @@ mp.register_script_message('xreal-display', function(value)
     if changed then apply() end
 end)
 mp.register_script_message('xreal-output', function(value)
-    if value ~= 'auto' and value ~= 'half' and value ~= 'full' then return end
+    if value ~= 'auto' and value ~= 'half' and value ~= 'full' and value ~= 'mono' then return end
     output_override = value; apply(); status()
 end)
 mp.register_script_message('xreal-look', function(dx, dy)
