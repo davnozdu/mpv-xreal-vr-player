@@ -90,6 +90,10 @@ shutil.copy2(ROOT / 'xreal/test-output/optimization-audit.json', RESOURCES / 'op
 # lets the built-in updater accept only builds signed with the same key.
 # Local development builds stay ad-hoc and never self-update.
 IDENTITY = os.environ.get('XREAL_SIGN_IDENTITY', '-')
+# Placeholders from the bundle skeleton are unsigned nested "code" for a
+# certificate signature.
+for placeholder in APP.rglob('.gitkeep'):
+    placeholder.unlink()
 SIGN = ['codesign', '--force', '--sign', IDENTITY]
 if os.environ.get('XREAL_SIGN_KEYCHAIN'):
     SIGN += ['--keychain', os.environ['XREAL_SIGN_KEYCHAIN']]
