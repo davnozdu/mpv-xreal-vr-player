@@ -64,7 +64,7 @@ vec4 hook() {
         vec2 xy = (uv * 2.0 - 1.0) * tan(radians(fov) * 0.5);
         vec3 ray = normalize(vec3(xy.x, -xy.y * 9.0 / 16.0, 1.0));
         float p = radians(pitch);
-        ray.yz = mat2(cos(p), sin(p), -sin(p), cos(p)) * ray.yz;
+        ray.yz = mat2(cos(p), -sin(p), sin(p), cos(p)) * ray.yz;
         float y = radians(yaw);
         ray.xz = mat2(cos(y), -sin(y), sin(y), cos(y)) * ray.xz;
         float longitude = atan(ray.x, ray.z);
