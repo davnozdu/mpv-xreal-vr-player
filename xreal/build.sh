@@ -15,4 +15,5 @@ meson compile -C build -j 3
 meson test -C build --print-errorlogs
 python3 xreal/test_player.py build/mpv
 python3 xreal/audit.py
+python3 xreal/validate_shader.py
 python3 xreal/package.py

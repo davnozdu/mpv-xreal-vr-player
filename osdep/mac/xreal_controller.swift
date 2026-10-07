@@ -44,8 +44,8 @@ class XREALController: NSObject {
             let name = $0.localizedName.lowercased()
             return name.contains("xreal") || name.contains("nreal")
         }) else {
+            _ = AppHub.shared.input.command("script-message xreal-display preview")
             if lastDisplay != "preview" {
-                _ = AppHub.shared.input.command("script-message xreal-display preview")
                 _ = AppHub.shared.input.command("set fullscreen no")
                 lastDisplay = "preview"
             }
@@ -56,11 +56,13 @@ class XREALController: NSObject {
         let width = mode?.pixelWidth ?? Int(screen.frame.width)
         let height = mode?.pixelHeight ?? Int(screen.frame.height)
         let full = Double(width) / Double(max(height, 1)) > 3.0
+        // Input becomes ready before Lua scripts are loaded. Re-send discovery
+        // so startup cannot lose the display message; Lua ignores duplicates.
+        _ = AppHub.shared.input.command("script-message xreal-display \(full ? "full" : "half")")
         let key = "\(screen.displayID):\(width)x\(height):\(index)"
         if lastDisplay == key { return }
         _ = AppHub.shared.input.command("set screen \(index)")
         _ = AppHub.shared.input.command("set fs-screen \(index)")
-        _ = AppHub.shared.input.command("script-message xreal-display \(full ? "full" : "half")")
         _ = AppHub.shared.input.command("set fullscreen yes")
         lastDisplay = key
     }

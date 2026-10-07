@@ -46,6 +46,7 @@ jobs:
             build/meson-logs/testlog.txt
             xreal/test-output/report.json
             xreal/test-output/optimization-audit.json
+            xreal/test-output/shader-validation.json
             xreal/test-output/mpv.log
           if-no-files-found: ignore
 
