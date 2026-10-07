@@ -45,6 +45,9 @@ jobs:
           security unlock-keychain -p "$password" "$keychain"
           security import "$RUNNER_TEMP/signing.p12" -k "$keychain" -P "$P12_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple: -s -k "$password" "$keychain" > /dev/null
+          # codesign looks identities up through the user search list.
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          security find-identity -p codesigning "$keychain"
           rm "$RUNNER_TEMP/signing.p12"
           echo "XREAL_SIGN_IDENTITY=XREAL VR Player Code Signing" >> "$GITHUB_ENV"
           echo "XREAL_SIGN_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
