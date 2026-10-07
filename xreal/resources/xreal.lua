@@ -81,7 +81,9 @@ local function notify(text)
 end
 
 local function apply()
-    local params = mp.get_property_native('video-params')
+    -- video-params includes our output aspect override. Read the decoder's
+    -- original parameters so changing the output cannot distort each eye.
+    local params = mp.get_property_native('video-dec-params')
     local output = actual_output()
     mp.set_property('video-aspect-override', output == 'half' and '16:9' or '32:9')
     if not params or not params.w or not params.h then draw(); return end
@@ -138,7 +140,7 @@ mp.register_event('start-file', function()
     yaw=0; pitch=0; fov=70
 end)
 mp.register_event('file-loaded', function() apply(); status() end)
-mp.observe_property('video-params', 'native', apply)
+mp.observe_property('video-dec-params', 'native', apply)
 mp.observe_property('osd-dimensions', 'native', draw)
 mp.observe_property('idle-active', 'bool', draw)
 mp.add_periodic_timer(0.25, draw)
