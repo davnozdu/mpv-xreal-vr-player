@@ -193,7 +193,8 @@ mp.register_event('start-file', function()
     yaw=0; pitch=0; fov=70
 end)
 mp.register_event('file-loaded', function()
-    apply(); status()
+    -- No automatic notice over the movie; H or the XREAL menu shows status.
+    apply()
     if o.autofs then mp.set_property_native('fullscreen', true) end
 end)
 mp.observe_property('video-dec-params', 'native', apply)
