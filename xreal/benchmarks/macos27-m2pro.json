@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-07",
+  "hardware": "MacBook Pro / Apple M2 Pro / 16 GB RAM",
+  "os": "macOS 27.0 (26A428)",
+  "fixture": {
+    "generator": "FFmpeg testsrc2, libx265, CTU 64, GOP 120, two-second segment looped to 35 seconds with silent AAC",
+    "codec": "HEVC Main / HVC1",
+    "resolution": "8192x4096",
+    "fps": 60,
+    "bitrate_mbps": 20.9
+  },
+  "ffmpeg_decode_only": {
+    "decoder": "CPU; restricted terminal could not initialize VideoToolbox",
+    "frames": 2102,
+    "wall_seconds": 11.379,
+    "average_fps": 185,
+    "includes_rendering": false
+  },
+  "mpv_manual_comparison": {
+    "videotoolbox": {"interval_seconds": 12.638, "media_progress_seconds": 9.633333, "dropped_frames": 466},
+    "cpu": {"interval_seconds": 12.113, "media_progress_seconds": 12.066667, "dropped_frames": 0, "gpu_average_ms": 2.83}
+  },
+  "automatic_decoder_trial": {
+    "initial_decoder": "VideoToolbox",
+    "selected_decoder": "CPU",
+    "switch_after_playback_seconds": 5.7,
+    "drops_after_decoder_switch": 3,
+    "completed_35_second_fixture": true,
+    "gpu_average_ms_at_end": 3.23,
+    "audio": "CoreAudio stereo 48000 Hz",
+    "desktop_fullscreen": true
+  },
+  "limits": "Synthetic sample on laptop display. No physical XREAL output, head-pose input, or user 122 Mbps movie tested. Initial VideoToolbox trial can stutter for several seconds; counters reset when the decoder changes. These results do not guarantee every 8K movie plays at 60 fps."
+}

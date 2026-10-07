@@ -3,7 +3,7 @@ local mp = require 'mp'
 local utils = require 'mp.utils'
 local options = require 'mp.options'
 local assdraw = require 'mp.assdraw'
-local o = {prefs = '', shaders = '', autofs = false}
+local o = {prefs = '', shaders = '', autofs = false, autodecode = false}
 options.read_options(o, 'xreal')
 local preferences = {}
 if o.prefs ~= '' then
@@ -24,6 +24,7 @@ local overlay_visible = false
 local message, notice_until = '', 0
 local selected_audio
 local selected_shader
+local decode_sample, software_trial, decode_attempted
 
 local function select_audio()
     if display == 'preview' then
@@ -170,6 +171,11 @@ mp.register_script_message('xreal-swap', function()
 end)
 mp.register_script_message('xreal-status', status)
 mp.register_event('start-file', function()
+    decode_sample = nil; software_trial = nil; decode_attempted = false
+    if o.autodecode then
+        mp.set_property('vd-queue-enable', 'no')
+        mp.set_property('hwdec', 'auto-safe')
+    end
     local entry = preferences[mp.get_property('path', '')]
     mode = type(entry)=='table' and valid[entry.mode] and entry.mode or 'auto'
     swapped = type(entry)=='table' and entry.swapped == true or false
@@ -183,6 +189,50 @@ mp.observe_property('video-dec-params', 'native', apply)
 mp.observe_property('osd-dimensions', 'native', draw)
 mp.observe_property('idle-active', 'bool', draw)
 mp.add_periodic_timer(0.25, draw)
+-- VideoToolbox can be slower than CPU decoding for some 8K streams. Judge
+-- sustained playback after startup/seek, and only fall back when rendering
+-- itself fits within the frame budget. Never repeatedly switch a movie.
+local function reset_decode_sample() decode_sample = nil end
+mp.register_event('seek', reset_decode_sample)
+mp.observe_property('pause', 'bool', reset_decode_sample)
+mp.add_periodic_timer(1, function()
+    if not o.autodecode or mp.get_property_native('idle-active') or mp.get_property_native('pause') then
+        decode_sample = nil; return
+    end
+    local params = mp.get_property_native('video-dec-params', {})
+    local fps = mp.get_property_number('container-fps', 0)
+    if (params.w or 0) < 5760 or fps < 48 then return end
+    local decoder = mp.get_property('hwdec-current', 'no')
+    if decode_attempted and not software_trial then return end
+    if not software_trial and not decoder:find('videotoolbox', 1, true) then return end
+    local now, pos = mp.get_time(), mp.get_property_number('time-pos', 0)
+    local drops = mp.get_property_number('frame-drop-count', 0)
+    if not decode_sample then decode_sample = {wall=now, pos=pos, drops=drops}; return end
+    local elapsed, progress = now - decode_sample.wall, pos - decode_sample.pos
+    if elapsed < 5 then return end
+    local ratio = math.max(0, drops - decode_sample.drops) / math.max(1, fps * progress)
+    local passes, gpu_ms = mp.get_property_native('vo-passes', {}), 0
+    for _, pass in ipairs(passes.fresh or {}) do gpu_ms = gpu_ms + (pass.avg or 0) / 1000000 end
+    decode_sample = nil
+    if software_trial then
+        if decoder == 'no' and (progress < elapsed * 0.5 or ratio >= software_trial * 0.9) then
+            mp.set_property('vd-queue-enable', 'no')
+            mp.set_property('hwdec', 'auto-safe')
+            mp.msg.info('Automatic decoding: restored VideoToolbox; CPU trial did not improve playback')
+        end
+        software_trial = nil
+    elseif progress >= 1 and ratio > 0.25 and gpu_ms > 0 and gpu_ms < 1000 / fps then
+        decode_attempted = true; software_trial = ratio
+        mp.set_property('vd-queue-enable', 'yes')
+        mp.set_property('vd-queue-max-bytes', '256MiB')
+        mp.set_property('vd-queue-max-samples', '4')
+        mp.set_property('hwdec', 'no')
+        -- mpv's hwdec property handler queues an exact seek to refill the new
+        -- decoder from a keyframe while preserving playback position.
+        mp.msg.info('Automatic decoding: trying CPU after sustained VideoToolbox frame drops')
+        notify('Оптимизация 8K: переключение декодера')
+    end
+end)
 -- Lightweight runtime evidence without logging the movie name or its path.
 mp.add_periodic_timer(10, function()
     if mp.get_property_native('idle-active') then return end

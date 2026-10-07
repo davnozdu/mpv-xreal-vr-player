@@ -14,20 +14,22 @@ class XREALController: NSObject {
         let cache = NSHomeDirectory() + "/Library/Caches/XREAL VR Player"
         try? FileManager.default.createDirectory(atPath: state, withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(atPath: cache, withIntermediateDirectories: true)
-        return [CommandLine.arguments[0], "--no-config", "--load-scripts=no",
+        let arguments = [CommandLine.arguments[0], "--no-config", "--load-scripts=no",
                 "--script=\(resources)/xreal.lua", "--glsl-shaders=\(resources)/xreal.glsl",
-                "--input-conf=\(resources)/input.conf", "--script-opts=xreal-prefs=\(state)/preferences.json,xreal-shaders=\(resources),xreal-autofs=yes",
+                "--input-conf=\(resources)/input.conf", "--script-opts=xreal-prefs=\(state)/preferences.json,xreal-shaders=\(resources),xreal-autofs=yes,xreal-autodecode=yes",
                 "--watch-later-directory=\(state)/watch_later", "--gpu-shader-cache-dir=\(cache)/shaders",
                 "--icc-cache-dir=\(cache)/icc",
                 "--log-file=\(NSHomeDirectory())/Library/Logs/XREAL-VR-Player\(preview ? "-Preview" : "").log",
                 "--idle=yes", "--force-window=immediate", "--keep-open=yes",
                 "--vo=gpu-next,gpu", "--gpu-api=vulkan", "--gpu-context=macvk",
                 "--macos-render-timer=system",
+                "--scale=bilinear", "--cscale=bilinear", "--dscale=bilinear",
                 "--hwdec=auto-safe", "--ao=coreaudio", "--vd-lavc-threads=0",
                 "--demuxer-max-bytes=256MiB", "--demuxer-readahead-secs=10",
                 "--video-aspect-override=16:9", "--autofit=1100x700", "--native-fs=no",
                 "--osc=no", "--osd-level=0", "--sub=no", "--title=XREAL VR Player\(preview ? " Test" : "")",
                 "--window-dragging=yes", "--cursor-autohide=1000"]
+        return arguments
     }
 
     func start() {
