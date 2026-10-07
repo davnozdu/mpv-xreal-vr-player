@@ -22,27 +22,8 @@ local display, output_override, yaw, pitch, fov, swapped = 'preview', 'auto', 0,
 local overlay = mp.create_osd_overlay('ass-events')
 local overlay_visible = false
 local message, notice_until = '', 0
-local selected_audio
 local selected_shader
 local decode_sample, software_trial, decode_attempted
-
-local function select_audio()
-    if display == 'preview' then
-        if selected_audio and mp.get_property('audio-device') == selected_audio then
-            mp.set_property('audio-device', 'auto')
-        end
-        selected_audio = nil
-        return
-    end
-    for _, device in ipairs(mp.get_property_native('audio-device-list', {})) do
-        local description = (device.description or ''):lower()
-        if description:find('xreal') or description:find('nreal') then
-            selected_audio = device.name
-            if mp.get_property('audio-device') ~= device.name then mp.set_property('audio-device', device.name) end
-            return
-        end
-    end
-end
 
 local function save()
     if o.prefs == '' then return end
@@ -176,7 +157,7 @@ end)
 mp.register_script_message('xreal-display', function(value)
     if value ~= 'preview' and value ~= 'half' and value ~= 'full' then return end
     local changed = display ~= value
-    display = value; select_audio()
+    display = value
     if changed then apply() end
 end)
 mp.register_script_message('xreal-output', function(value)

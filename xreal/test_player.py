@@ -44,12 +44,12 @@ with tempfile.TemporaryDirectory(prefix='xreal-', dir='/tmp') as directory:
     # plays as one ordinary picture with a seek bar, stereo video is split.
     step('half-display-2d', [['script-message', 'xreal-mode', '2d'],
                              ['script-message', 'xreal-display', 'half']], {'resolved': '2d', 'output': 'mono'},
-         aspect=16/9, mono=1, properties={'user-data/osc/visibility': 'auto'})
+         aspect=16/9, mono=1, properties={'user-data/osc/visibility': 'auto', 'audio-device': 'auto'})
     step('half-display-stereo', [['script-message', 'xreal-mode', 'hsbs']], {'resolved': 'hsbs', 'output': 'half'},
          aspect=16/9, mono=0, properties={'user-data/osc/visibility': 'never'})
     step('full-display-2d', [['script-message', 'xreal-mode', '2d'],
                              ['script-message', 'xreal-display', 'full']], {'resolved': '2d', 'output': 'full'},
-         aspect=32/9, mono=0, properties={'user-data/osc/visibility': 'never'})
+         aspect=32/9, mono=0, properties={'user-data/osc/visibility': 'never', 'audio-device': 'auto'})
     step('output-mono', [['script-message', 'xreal-display', 'full'],
                          ['script-message', 'xreal-output', 'mono']], {'output': 'mono'}, aspect=16/9, mono=1)
     step('output-auto', [['script-message', 'xreal-output', 'auto'],

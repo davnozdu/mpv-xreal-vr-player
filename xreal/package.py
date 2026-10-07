@@ -39,7 +39,7 @@ plist = {
     'CFBundleIdentifier': 'com.davnozdu.xreal-vr-player',
     'CFBundleName': 'XREAL VR Player', 'CFBundleDisplayName': 'XREAL VR Player',
     'CFBundlePackageType': 'APPL', 'CFBundleInfoDictionaryVersion': '6.0',
-    'CFBundleShortVersionString': '0.1.7', 'CFBundleVersion': '8',
+    'CFBundleShortVersionString': '0.1.8', 'CFBundleVersion': '9',
     'CFBundleIconFile': 'icon', 'NSHighResolutionCapable': True,
     'LSApplicationCategoryType': 'public.app-category.video',
     'LSMinimumSystemVersion': '15.0',
