@@ -26,7 +26,7 @@ report = {'architecture': architecture, 'release': True, 'optimization': 3, 'lto
           'hardware_decoder': 'VideoToolbox', 'hardware_metal_interop': True,
           'gpu_context': 'macvk (Vulkan via MoltenVK/Metal)',
           'projection': 'GPU shader; no CPU v360 or copy-back filter',
-          'runtime_defaults': 'gpu-next,gpu / vulkan,gl / macvk,cocoa / hwdec=auto-safe',
+          'runtime_defaults': 'gpu-next,gpu / vulkan / macvk / hwdec=auto-safe',
           'hardware_runtime_test': 'requires actual video and display; this audit verifies build capabilities'}
 out = ROOT / 'xreal/test-output'
 out.mkdir(exist_ok=True)

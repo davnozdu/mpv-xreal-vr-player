@@ -33,7 +33,7 @@ with tempfile.TemporaryDirectory(prefix='xreal-bundle-', dir='/tmp') as director
     (out / 'bundle-startup.log').write_text(result.stdout + result.stderr + log)
     if result.returncode:
         raise RuntimeError(f'Bundle startup exited {result.returncode}: {result.stdout}\n{result.stderr}\n{log}')
-    assert '--gpu-api=vulkan,gl' in log, 'Branded startup defaults did not run'
+    assert '--gpu-api=vulkan' in log and '--gpu-context=macvk' in log, 'Branded startup defaults did not run'
     assert 'VO: [null]' in log, 'Packaged player did not decode the test movie'
     for error in ['Fatal error', 'Error parsing option', 'Lua error']:
         assert error not in log, log
