@@ -9,22 +9,24 @@ class XREALController: NSObject {
 
     static func arguments() -> [String] {
         let resources = Bundle.main.resourcePath!
+        let preview = Bundle.main.object(forInfoDictionaryKey: "XREALDevelopmentPreview") as? Bool == true
         let state = NSHomeDirectory() + "/Library/Application Support/XREAL VR Player"
         let cache = NSHomeDirectory() + "/Library/Caches/XREAL VR Player"
         try? FileManager.default.createDirectory(atPath: state, withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(atPath: cache, withIntermediateDirectories: true)
         return [CommandLine.arguments[0], "--no-config", "--load-scripts=no",
                 "--script=\(resources)/xreal.lua", "--glsl-shaders=\(resources)/xreal.glsl",
-                "--input-conf=\(resources)/input.conf", "--script-opts=xreal-prefs=\(state)/preferences.json",
+                "--input-conf=\(resources)/input.conf", "--script-opts=xreal-prefs=\(state)/preferences.json,xreal-shaders=\(resources),xreal-autofs=yes",
                 "--watch-later-directory=\(state)/watch_later", "--gpu-shader-cache-dir=\(cache)/shaders",
                 "--icc-cache-dir=\(cache)/icc",
-                "--log-file=\(NSHomeDirectory())/Library/Logs/XREAL-VR-Player.log",
+                "--log-file=\(NSHomeDirectory())/Library/Logs/XREAL-VR-Player\(preview ? "-Preview" : "").log",
                 "--idle=yes", "--force-window=immediate", "--keep-open=yes",
                 "--vo=gpu-next,gpu", "--gpu-api=vulkan", "--gpu-context=macvk",
+                "--macos-render-timer=system",
                 "--hwdec=auto-safe", "--ao=coreaudio", "--vd-lavc-threads=0",
                 "--demuxer-max-bytes=256MiB", "--demuxer-readahead-secs=10",
-                "--video-aspect-override=32:9", "--autofit=1100x500", "--native-fs=no",
-                "--osc=no", "--osd-level=0", "--sub=no", "--title=XREAL VR Player",
+                "--video-aspect-override=16:9", "--autofit=1100x700", "--native-fs=no",
+                "--osc=no", "--osd-level=0", "--sub=no", "--title=XREAL VR Player\(preview ? " Test" : "")",
                 "--window-dragging=yes", "--cursor-autohide=1000"]
     }
 
@@ -36,7 +38,7 @@ class XREALController: NSObject {
         updateDisplay()
     }
 
-    @objc func displaysChanged() { lastDisplay = nil; updateDisplay() }
+    @objc func displaysChanged() { updateDisplay() }
 
     func updateDisplay() {
         let screens = NSScreen.screens
@@ -45,10 +47,7 @@ class XREALController: NSObject {
             return name.contains("xreal") || name.contains("nreal")
         }) else {
             _ = AppHub.shared.input.command("script-message xreal-display preview")
-            if lastDisplay != "preview" {
-                _ = AppHub.shared.input.command("set fullscreen no")
-                lastDisplay = "preview"
-            }
+            lastDisplay = "preview"
             return
         }
         let screen = screens[index]
@@ -72,6 +71,7 @@ class XREALController: NSObject {
         alert.messageText = "XREAL VR Player"
         alert.informativeText = """
         Откройте фильм: ⌘O или перетащите файл в окно.
+        Без очков показывается один вид на экране Mac. F — полный экран; Esc — окно.
         На очках включите 3D Mode → Full SBS (3840×1080) или Half SBS (1920×1080).
         Плеер автоматически выбирает дисплей XREAL и формат вывода.
 

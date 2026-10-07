@@ -41,6 +41,10 @@ timer = mp.add_periodic_timer(0.05, function()
         if math.abs(aspect - step.aspect) > 0.001 then matches = false end
     end
     if step.eye_aspect and math.abs((state.eye_aspect or 0) - step.eye_aspect) > 0.001 then matches = false end
+    if step.mono ~= nil then
+        local opts = mp.get_property('glsl-shader-opts', '')
+        if not opts:find('xreal_mono=' .. step.mono, 1, true) then matches = false end
+    end
     if matches then
         tests[#tests + 1] = {test=step.name, passed=true}
         next_step()

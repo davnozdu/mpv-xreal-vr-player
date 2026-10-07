@@ -34,6 +34,12 @@
 //!MAXIMUM 110.0
 70.0
 
+//!PARAM xreal_mono
+//!TYPE int
+//!MINIMUM 0
+//!MAXIMUM 1
+0
+
 //!HOOK MAIN
 //!BIND HOOKED
 //!DESC XREAL separate-eye projection
@@ -42,8 +48,8 @@
 const float PI = 3.141592653589793;
 
 vec4 hook() {
-    float eye = step(0.5, HOOKED_pos.x);
-    vec2 uv = vec2(fract(HOOKED_pos.x * 2.0), HOOKED_pos.y);
+    float eye = xreal_mono == 1 ? 0.0 : step(0.5, HOOKED_pos.x);
+    vec2 uv = xreal_mono == 1 ? HOOKED_pos : vec2(fract(HOOKED_pos.x * 2.0), HOOKED_pos.y);
     if (swap_eyes == 1) eye = 1.0 - eye;
     bool top_bottom = xreal_mode == 4 || xreal_mode == 5;
 

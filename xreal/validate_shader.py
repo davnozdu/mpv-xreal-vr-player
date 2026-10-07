@@ -15,6 +15,7 @@ layout(location=0) out vec4 color;
 layout(binding=0) uniform sampler2D source;
 layout(binding=1) uniform Parameters {
     int xreal_mode;
+    int xreal_mono;
     float eye_aspect;
     int swap_eyes;
     float yaw;

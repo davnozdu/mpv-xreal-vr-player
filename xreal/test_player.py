@@ -34,9 +34,10 @@ with tempfile.TemporaryDirectory(prefix='xreal-', dir='/tmp') as directory:
     step('panorama-look', [['script-message', 'xreal-look', '20', '15']], {'yaw': 20, 'pitch': 15})
     step('swap-eyes', [['script-message', 'xreal-swap']], {'swapped': True})
     step('reset-look', [['script-message', 'xreal-reset']], {'yaw': 0, 'pitch': 0, 'fov': 70})
-    for output, ratio in [('half', 16/9), ('full', 32/9), ('preview', 32/9)]:
+    for output, ratio in [('half', 16/9), ('full', 32/9), ('preview', 16/9)]:
         step(f'output-{output}', [['script-message', 'xreal-output', 'auto'],
-                                 ['script-message', 'xreal-display', output]], {'output': output}, aspect=ratio)
+                                 ['script-message', 'xreal-display', output]], {'output': output}, aspect=ratio,
+             mono=1 if output == 'preview' else 0)
     step('auto-mode', [['script-message', 'xreal-mode', 'auto']], {'mode': 'auto'})
     for filename, expected in [('film-Full-SBS.mkv', 'fsbs'), ('film-Half-SBS.mkv', 'hsbs'),
                                ('film-VR180-SBS.mkv', 'vr180'), ('film-VR360-TB-test.mkv', 'vr360tb')]:

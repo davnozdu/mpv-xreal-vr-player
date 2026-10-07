@@ -13,7 +13,9 @@ ROOT = Path(__file__).resolve().parents[1]
 os.chdir(ROOT)
 DIST = ROOT / 'dist'
 DIST.mkdir(exist_ok=True)
-APP = DIST / 'XREAL VR Player.app'
+PREVIEW = '--preview' in sys.argv
+APP = DIST / ('.preview.noindex/XREAL VR Player Test.app' if PREVIEW else 'XREAL VR Player.app')
+APP.parent.mkdir(exist_ok=True)
 sys.path.insert(0, str(ROOT / 'TOOLS'))
 import dylib_unhell
 linked_libraries, _ = dylib_unhell.libraries(str(ROOT / 'build/mpv'))
@@ -27,13 +29,16 @@ RESOURCES = CONTENTS / 'Resources'
 (MACOS / 'mpv').rename(MACOS / 'xreal-vr-player')
 for resource in (ROOT / 'xreal/resources').iterdir():
     shutil.copy2(resource, RESOURCES / resource.name)
+# A mono desktop viewport renders only 1920x1080; glasses use 3840x1080 SBS.
+(RESOURCES / 'xreal-preview.glsl').write_text(
+    (ROOT / 'xreal/resources/xreal.glsl').read_text().replace('//!WIDTH 3840', '//!WIDTH 1920'))
 shutil.copy2(ROOT / 'xreal/QUICKSTART-RU.md', RESOURCES / 'QUICKSTART-RU.md')
 plist = {
     'CFBundleDevelopmentRegion': 'ru', 'CFBundleExecutable': 'xreal-vr-player',
     'CFBundleIdentifier': 'com.davnozdu.xreal-vr-player',
     'CFBundleName': 'XREAL VR Player', 'CFBundleDisplayName': 'XREAL VR Player',
     'CFBundlePackageType': 'APPL', 'CFBundleInfoDictionaryVersion': '6.0',
-    'CFBundleShortVersionString': '0.1.1', 'CFBundleVersion': '2',
+    'CFBundleShortVersionString': '0.1.2', 'CFBundleVersion': '3',
     'CFBundleIconFile': 'icon', 'NSHighResolutionCapable': True,
     'LSApplicationCategoryType': 'public.app-category.video',
     'LSMinimumSystemVersion': '15.0',
@@ -45,6 +50,10 @@ plist = {
     }],
 }
 with (CONTENTS / 'Info.plist').open('wb') as f:
+    if PREVIEW:
+        plist['XREALDevelopmentPreview'] = True
+        plist['CFBundleName'] = plist['CFBundleDisplayName'] = 'XREAL VR Player Test'
+        plist.pop('CFBundleDocumentTypes')
     plistlib.dump(plist, f)
 licenses = RESOURCES / 'licenses'
 licenses.mkdir(exist_ok=True)
@@ -87,6 +96,9 @@ for f in [MACOS / 'xreal-vr-player', *sorted((MACOS / 'lib').glob('*.dylib'))]:
     for line in linked.splitlines()[1:]:
         if '/opt/homebrew/' in line or '/usr/local/' in line or str(ROOT) in line:
             raise RuntimeError(f'Unbundled dependency in {f}: {line.strip()}')
+if PREVIEW:
+    print(f'Prepared isolated GUI preview: {APP}')
+    sys.exit(0)
 subprocess.run([sys.executable, 'xreal/test_bundle.py', str(APP)], check=True)
 stage = DIST / 'dmg-stage'
 if stage.exists():

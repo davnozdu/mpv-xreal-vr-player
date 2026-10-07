@@ -25,7 +25,7 @@ with tempfile.TemporaryDirectory(prefix='xreal-bundle-', dir='/tmp') as director
     result = subprocess.run([str(binary), '--vo=null', '--ao=null', '--hwdec=no',
         '--idle=no', '--force-window=no', '--keep-open=no', '--frames=2',
         '--terminal=yes', f'--log-file={temp}/startup.log',
-        f'--script-opts=xreal-prefs={temp}/preferences.json',
+        f'--script-opts=xreal-prefs={temp}/preferences.json,xreal-shaders={APP}/Contents/Resources,xreal-autofs=no',
         f'--watch-later-directory={temp}/watch-later',
         f'--gpu-shader-cache-dir={temp}/shaders', f'--icc-cache-dir={temp}/icc', str(movie)],
         capture_output=True, text=True, timeout=30)

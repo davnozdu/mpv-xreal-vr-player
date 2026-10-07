@@ -323,9 +323,11 @@ static bool init_audiounit(struct ao *ao, AudioStreamBasicDescription asbd, Audi
     CHECK_CA_ERROR_L(coreaudio_error_audiounit,
                      "can't link audio unit to selected device");
 
+    // ChannelMap expects an array of SInt32 indices, not an AudioChannelLayout.
+    // macOS 27 rejects the old type mismatch with kAudio_ParamError (-50).
     err = AudioUnitSetProperty(p->audio_unit,
-                               kAudioOutputUnitProperty_ChannelMap,
-                               kAudioUnitScope_Global, 0, layout, layout_size);
+                               kAudioUnitProperty_AudioChannelLayout,
+                               kAudioUnitScope_Input, 0, layout, layout_size);
 
     CHECK_CA_ERROR_L(coreaudio_error_audiounit,
                      "unable to set the input channel layout on the audio unit");
