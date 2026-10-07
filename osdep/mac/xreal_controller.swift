@@ -28,6 +28,10 @@ class XREALController: NSObject {
                 "--demuxer-max-bytes=256MiB", "--demuxer-readahead-secs=10",
                 "--video-aspect-override=16:9", "--autofit=1100x700", "--native-fs=no",
                 "--osc=no", "--osd-level=0", "--sub=no", "--title=XREAL VR Player\(preview ? " Test" : "")",
+                // Built-in OSD menus and yt-dlp support are unusable split
+                // between two eyes; skipping them opens movies sooner.
+                "--ytdl=no", "--load-stats-overlay=no", "--load-console=no", "--load-auto-profiles=no",
+                "--load-select=no", "--load-positioning=no", "--load-commands=no", "--load-context-menu=no",
                 "--window-dragging=yes", "--cursor-autohide=1000"]
         return arguments
     }

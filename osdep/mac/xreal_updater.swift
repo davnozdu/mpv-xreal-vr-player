@@ -15,7 +15,11 @@ final class XREALUpdater: @unchecked Sendable {
     let assetName = "XREAL-VR-Player-arm64.zip"
     let checkInterval: TimeInterval = 6 * 60 * 60
     let lastCheckKey = "XREALLastUpdateCheck"
-    let updateDirectory = URL(fileURLWithPath: NSHomeDirectory() + "/Library/Caches/XREAL VR Player/Update")
+    // .noindex keeps Spotlight, and with it Launch Services, away from the
+    // staged copy so "Open With" never lists it.
+    let updateDirectory = URL(fileURLWithPath: NSHomeDirectory() + "/Library/Caches/XREAL VR Player/Update.noindex")
+    static let lsregister = "/System/Library/Frameworks/CoreServices.framework/Frameworks/" +
+        "LaunchServices.framework/Support/lsregister"
     var staged = false
     var log: LogHelper { return AppHub.shared.log }
 
@@ -57,6 +61,7 @@ final class XREALUpdater: @unchecked Sendable {
                     }
                 }
             } catch {
+                try? FileManager.default.removeItem(at: self.updateDirectory)
                 self.log.warning("Update check failed: \(error)")
             }
         }
@@ -145,16 +150,23 @@ final class XREALUpdater: @unchecked Sendable {
         }
 
         // Swap the bundles once this process exits; roll back if the move fails.
+        // The old copy goes into the .noindex directory rather than next to
+        // the app, then the single installed copy is registered again.
         let script = """
             while /bin/kill -0 "$1" 2>/dev/null; do /bin/sleep 1; done
-            old="$3.old-$$"
+            old="$4/previous.app"
             /bin/mv "$3" "$old" || exit 1
-            if /bin/mv "$2" "$3"; then /bin/rm -rf "$old" "$4"; else /bin/mv "$old" "$3"; fi
+            if /bin/mv "$2" "$3"; then
+                "$5" -u "$2"; "$5" -u "$old"; "$5" -f "$3"
+                /bin/rm -rf "$4"
+            else
+                /bin/mv "$old" "$3"
+            fi
             """
         let installer = Process()
         installer.executableURL = URL(fileURLWithPath: "/bin/sh")
         installer.arguments = ["-c", script, "xreal-update", String(getpid()), newApp.path, app.path,
-                               updateDirectory.path]
+                               updateDirectory.path, XREALUpdater.lsregister]
         try installer.run()
         return version
     }

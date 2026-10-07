@@ -137,4 +137,11 @@ if zip_path.exists():
 subprocess.run(['ditto', '-c', '-k', '--sequesterRsrc', '--keepParent', str(APP), str(zip_path)], check=True)
 (DIST / 'SHA256SUMS.txt').write_text(''.join(
     f'{hashlib.sha256(f.read_bytes()).hexdigest()}  {f.name}\n' for f in [image, zip_path]))
+# Each unpacked copy macOS sees becomes another entry in Finder's "Open
+# With" menu. Ship only the archives and forget the build copies.
+LSREGISTER = ('/System/Library/Frameworks/CoreServices.framework/Frameworks/'
+              'LaunchServices.framework/Support/lsregister')
+for copy in [stage / APP.name, APP]:
+    subprocess.run([LSREGISTER, '-u', str(copy)], stderr=subprocess.DEVNULL)
+shutil.rmtree(APP)
 print(f'Packaged: {image}')
