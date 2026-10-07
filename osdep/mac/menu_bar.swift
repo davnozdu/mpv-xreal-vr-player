@@ -96,7 +96,7 @@ class MenuBar: NSObject, EventSubscriber {
 
         super.init()
 
-        let appMenuConfigs = [
+        var appMenuConfigs = [
             Config(name: "About mpv", action: #selector(about), target: self),
             Config(type: .separator),
             Config(
@@ -122,6 +122,17 @@ class MenuBar: NSObject, EventSubscriber {
             Config(name: "Quit and Remember Position", action: #selector(command(_:)), target: self, command: "quit-watch-later"),
             Config(name: "Quit mpv", key: "q", action: #selector(command(_:)), target: self, command: "quit")
         ]
+
+        if XREALController.isXREAL {
+            appMenuConfigs = appMenuConfigs.filter { !["mpv.conf", "input.conf"].contains($0.url) }.map { config in
+                var renamed = config
+                renamed = Config(name: config.name.replacingOccurrences(of: "mpv", with: "XREAL VR Player"),
+                    key: config.key, modifiers: config.modifiers, type: config.type,
+                    action: config.action, target: config.target, command: config.command, url: config.url,
+                    configs: config.configs)
+                return renamed
+            }
+        }
 
         let fileMenuConfigs = [
             Config(name: "Open File…", key: "o", action: #selector(openFiles), target: self),
@@ -242,7 +253,7 @@ class MenuBar: NSObject, EventSubscriber {
         ]
         if AppHub.shared.isBundle {
             helpMenuConfigs += [
-                Config(name: "Show log File…", action: #selector(showFile(_:)), target: self, url: NSHomeDirectory() + "/Library/Logs/mpv.log")
+                Config(name: "Show log File…", action: #selector(showFile(_:)), target: self, url: NSHomeDirectory() + (XREALController.isXREAL ? "/Library/Logs/XREAL-VR-Player.log" : "/Library/Logs/mpv.log"))
             ]
         }
 
@@ -258,6 +269,31 @@ class MenuBar: NSObject, EventSubscriber {
             Config(name: "Window", configs: windowMenuConfigs),
             Config(name: "Help", configs: helpMenuConfigs)
         ]
+
+        if XREALController.isXREAL {
+            let modes = [
+                ("Автоматически", "auto"), ("3D · Half SBS", "hsbs"), ("3D · Full SBS", "fsbs"),
+                ("VR180 · SBS", "vr180"), ("VR360 · SBS", "vr360"),
+                ("VR180 · сверху/снизу", "vr180tb"), ("VR360 · сверху/снизу", "vr360tb")
+            ]
+            var configs = modes.map { name, mode in
+                Config(name: name, action: #selector(command(_:)), target: self, command: "script-message xreal-mode \(mode)")
+            }
+            configs += [
+                Config(type: .separator),
+                Config(name: "Поменять левый и правый глаз", action: #selector(command(_:)), target: self, command: "script-message xreal-swap"),
+                Config(name: "Ракурс по центру", action: #selector(command(_:)), target: self, command: "script-message xreal-reset"),
+                Config(type: .separator),
+                Config(name: "Вывод: автоматически", action: #selector(command(_:)), target: self, command: "script-message xreal-output auto"),
+                Config(name: "Вывод: Full SBS", action: #selector(command(_:)), target: self, command: "script-message xreal-output full"),
+                Config(name: "Вывод: Half SBS", action: #selector(command(_:)), target: self, command: "script-message xreal-output half"),
+                Config(type: .separator),
+                Config(name: "Показать состояние", action: #selector(command(_:)), target: self, command: "script-message xreal-status"),
+                Config(name: "Как смотреть в XREAL…", action: #selector(XREALController.showHelp), target: XREALController.shared)
+            ]
+            menuConfigs.insert(Config(name: "XREAL", configs: configs), at: 2)
+            menuConfigs.removeAll { ["Video", "Subtitle"].contains($0.name) }
+        }
 
         createMenu(parentMenu: mainMenu, configs: menuConfigs)
         NSApp.mainMenu = mainMenu
@@ -299,7 +335,7 @@ class MenuBar: NSObject, EventSubscriber {
 
     @objc func about() {
         NSApp.orderFrontStandardAboutPanel(options: [
-            .applicationName: "mpv",
+            .applicationName: XREALController.isXREAL ? "XREAL VR Player" : "mpv",
             .applicationIcon: appIcon,
             .applicationVersion: String(cString: swift_mpv_version),
             .init(rawValue: "Copyright"): String(cString: swift_mpv_copyright)

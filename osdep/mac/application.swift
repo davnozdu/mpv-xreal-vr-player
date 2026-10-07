@@ -23,6 +23,8 @@ class Application: NSApplication, NSApplicationDelegate {
     var playbackThreadId: mp_thread!
     var argc: Int32?
     var argv: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+    // Owned until process exit, like the original C argv.
+    var xrealArgv: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
 
     override init() {
         super.init()
@@ -102,8 +104,18 @@ class Application: NSApplication, NSApplicationDelegate {
         NSApp.delegate = self
         NSApp.setActivationPolicy(appHub.isBundle ? .regular : .accessory)
         setupBundle()
+        if XREALController.isXREAL {
+            let arguments = XREALController.arguments() + CommandLine.arguments.dropFirst()
+            let owned = UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>.allocate(capacity: arguments.count + 1)
+            for (index, argument) in arguments.enumerated() { owned[index] = strdup(argument) }
+            owned[arguments.count] = nil
+            xrealArgv = owned
+            self.argc = Int32(arguments.count)
+            self.argv = owned
+        }
         pthread_create(&playbackThreadId, nil, playbackThread, TypeHelper.bridge(obj: self))
         appHub.input.wait()
+        if XREALController.isXREAL { XREALController.shared.start() }
         NSApp.run()
 
         // should never be reached

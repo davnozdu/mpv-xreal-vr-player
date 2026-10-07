@@ -37,7 +37,7 @@ class AppHub: NSObject {
 #endif
 
     var isApplication: Bool { return NSApp is Application }
-    var isBundle: Bool { return ProcessInfo.processInfo.environment["MPVBUNDLE"] == "true" }
+    var isBundle: Bool { return XREALController.isXREAL || ProcessInfo.processInfo.environment["MPVBUNDLE"] == "true" }
     var openEvents: Int = 0
 
     private override init() {

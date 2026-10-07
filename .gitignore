@@ -1,3 +1,7 @@
 /subprojects/*
 !/subprojects/packagefiles
 !/subprojects/*.wrap
+/build/
+/dist/
+/xreal/test-output/
+/.build-tools/
