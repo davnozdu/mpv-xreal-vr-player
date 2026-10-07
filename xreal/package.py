@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import plistlib
+import re
 import shutil
 import subprocess
 import sys
@@ -38,7 +39,7 @@ plist = {
     'CFBundleIdentifier': 'com.davnozdu.xreal-vr-player',
     'CFBundleName': 'XREAL VR Player', 'CFBundleDisplayName': 'XREAL VR Player',
     'CFBundlePackageType': 'APPL', 'CFBundleInfoDictionaryVersion': '6.0',
-    'CFBundleShortVersionString': '0.1.3', 'CFBundleVersion': '4',
+    'CFBundleShortVersionString': '0.1.4', 'CFBundleVersion': '5',
     'CFBundleIconFile': 'icon', 'NSHighResolutionCapable': True,
     'LSApplicationCategoryType': 'public.app-category.video',
     'LSMinimumSystemVersion': '15.0',
@@ -85,11 +86,23 @@ manifest = {
 (RESOURCES / 'build-manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2))
 shutil.copy2(ROOT / 'xreal/test-output/optimization-audit.json', RESOURCES / 'optimization-audit.json')
 # The rename and resources alter the signature; re-sign all Mach-O files.
-for f in sorted(MACOS.rglob('*')):
+# Releases use the permanent certificate: its stable designated requirement
+# lets the built-in updater accept only builds signed with the same key.
+# Local development builds stay ad-hoc and never self-update.
+IDENTITY = os.environ.get('XREAL_SIGN_IDENTITY', '-')
+SIGN = ['codesign', '--force', '--sign', IDENTITY]
+if os.environ.get('XREAL_SIGN_KEYCHAIN'):
+    SIGN += ['--keychain', os.environ['XREAL_SIGN_KEYCHAIN']]
+for f in sorted([*MACOS.rglob('*'), *(CONTENTS / 'Frameworks').rglob('*')]):
     if f.is_file():
-        subprocess.run(['codesign', '--force', '--sign', '-', str(f)], check=True)
-subprocess.run(['codesign', '--force', '--sign', '-', str(APP)], check=True)
+        subprocess.run([*SIGN, str(f)], check=True)
+subprocess.run([*SIGN, str(APP)], check=True)
 subprocess.run(['codesign', '--verify', '--deep', '--strict', str(APP)], check=True)
+if IDENTITY != '-':
+    requirement = subprocess.run(['codesign', '-d', '-r', '-', str(APP)],
+                                 capture_output=True, text=True, check=True)
+    # A self-signed certificate is its own root, so either form pins it.
+    assert re.search(r'certificate (leaf|root) = H"', requirement.stdout + requirement.stderr), requirement
 assert (MACOS / 'lib/libvt-metal-buffers.dylib').is_file(), 'VideoToolbox buffer hook is not bundled'
 # Check relocatability: no library may still link to Homebrew or the workspace.
 for f in [MACOS / 'xreal-vr-player', *sorted((MACOS / 'lib').glob('*.dylib'))]:

@@ -38,6 +38,7 @@ class XREALController: NSObject {
         // Lua and VO start asynchronously; repeat discovery once they are ready.
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in self?.updateDisplay() }
         updateDisplay()
+        XREALUpdater.shared.start()
     }
 
     @objc func displaysChanged() { updateDisplay() }

@@ -1630,6 +1630,7 @@ swift_sources = []
 if features['cocoa'] and features['swift']
     swift_sources += files('osdep/mac/application.swift',
                            'osdep/mac/xreal_controller.swift',
+                           'osdep/mac/xreal_updater.swift',
                            'osdep/mac/app_hub.swift',
                            'osdep/mac/clipboard.swift',
                            'osdep/mac/dialog.swift',

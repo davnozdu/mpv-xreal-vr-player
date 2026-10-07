@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run the actual branded bundle, including all of its injected startup options."""
 import json
+import os
 from pathlib import Path
 import plistlib
 import subprocess
@@ -28,7 +29,7 @@ with tempfile.TemporaryDirectory(prefix='xreal-bundle-', dir='/tmp') as director
         f'--script-opts=xreal-prefs={temp}/preferences.json,xreal-shaders={APP}/Contents/Resources,xreal-autofs=no',
         f'--watch-later-directory={temp}/watch-later',
         f'--gpu-shader-cache-dir={temp}/shaders', f'--icc-cache-dir={temp}/icc', str(movie)],
-        capture_output=True, text=True, timeout=30)
+        capture_output=True, text=True, timeout=30, env={**os.environ, 'XREAL_NO_UPDATE': '1'})
     log = (temp / 'startup.log').read_text() if (temp / 'startup.log').exists() else ''
     (out / 'bundle-startup.log').write_text(result.stdout + result.stderr + log)
     if result.returncode:
