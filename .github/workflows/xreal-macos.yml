@@ -48,6 +48,8 @@ jobs:
             xreal/test-output/optimization-audit.json
             xreal/test-output/shader-validation.json
             xreal/test-output/mpv.log
+            xreal/test-output/bundle-startup.json
+            xreal/test-output/bundle-startup.log
           if-no-files-found: ignore
 
   release:

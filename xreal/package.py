@@ -33,7 +33,7 @@ plist = {
     'CFBundleIdentifier': 'com.davnozdu.xreal-vr-player',
     'CFBundleName': 'XREAL VR Player', 'CFBundleDisplayName': 'XREAL VR Player',
     'CFBundlePackageType': 'APPL', 'CFBundleInfoDictionaryVersion': '6.0',
-    'CFBundleShortVersionString': '0.1.0', 'CFBundleVersion': '1',
+    'CFBundleShortVersionString': '0.1.1', 'CFBundleVersion': '2',
     'CFBundleIconFile': 'icon', 'NSHighResolutionCapable': True,
     'LSApplicationCategoryType': 'public.app-category.video',
     'LSMinimumSystemVersion': '15.0',
@@ -87,6 +87,7 @@ for f in [MACOS / 'xreal-vr-player', *sorted((MACOS / 'lib').glob('*.dylib'))]:
     for line in linked.splitlines()[1:]:
         if '/opt/homebrew/' in line or '/usr/local/' in line or str(ROOT) in line:
             raise RuntimeError(f'Unbundled dependency in {f}: {line.strip()}')
+subprocess.run([sys.executable, 'xreal/test_bundle.py', str(APP)], check=True)
 stage = DIST / 'dmg-stage'
 if stage.exists():
     shutil.rmtree(stage)

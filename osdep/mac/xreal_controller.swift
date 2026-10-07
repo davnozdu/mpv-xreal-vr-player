@@ -20,7 +20,7 @@ class XREALController: NSObject {
                 "--icc-cache-dir=\(cache)/icc",
                 "--log-file=\(NSHomeDirectory())/Library/Logs/XREAL-VR-Player.log",
                 "--idle=yes", "--force-window=immediate", "--keep-open=yes",
-                "--vo=gpu-next,gpu", "--gpu-api=vulkan,opengl", "--gpu-context=macvk,cocoa",
+                "--vo=gpu-next,gpu", "--gpu-api=vulkan,gl", "--gpu-context=macvk,cocoa",
                 "--hwdec=auto-safe", "--ao=coreaudio", "--vd-lavc-threads=0",
                 "--demuxer-max-bytes=256MiB", "--demuxer-readahead-secs=10",
                 "--video-aspect-override=32:9", "--autofit=1100x500", "--native-fs=no",
