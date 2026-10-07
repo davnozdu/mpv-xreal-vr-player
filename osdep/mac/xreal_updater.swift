@@ -42,9 +42,18 @@ final class XREALUpdater: @unchecked Sendable {
             return
         }
         forgetOtherCopies()
+        // Finder registers the copy inside a DMG as soon as it shows the
+        // mounted volume, so clean up again after each mount.
+        NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didMountNotification,
+                                                          object: nil, queue: .main) { [weak self] _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { self?.forgetOtherCopies() }
+        }
         // Leave startup and the first frames of a movie alone.
         DispatchQueue.main.asyncAfter(deadline: .now() + 20) { self.check() }
-        Timer.scheduledTimer(withTimeInterval: 60 * 60, repeats: true) { [weak self] _ in self?.check() }
+        Timer.scheduledTimer(withTimeInterval: 60 * 60, repeats: true) { [weak self] _ in
+            self?.forgetOtherCopies()
+            self?.check()
+        }
     }
 
     // Finder's "Open With" lists every copy Launch Services has ever seen,
