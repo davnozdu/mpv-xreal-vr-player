@@ -7,6 +7,8 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 shader = (ROOT / 'xreal/resources/xreal.glsl').read_text()
+# PARAM bodies contain default values for mpv's preprocessor, not GLSL.
+shader = shader[shader.index('//!HOOK MAIN'):]
 header = '''#version 450
 layout(location=0) in vec2 texcoord;
 layout(location=0) out vec4 color;
