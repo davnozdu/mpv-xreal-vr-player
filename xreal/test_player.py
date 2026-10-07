@@ -29,6 +29,7 @@ with tempfile.TemporaryDirectory(prefix='xreal-', dir='/tmp') as directory:
 
     # Unmarked 16:9 cannot be told apart from Half SBS; ordinary 2D is the default.
     step('open-unmarked', [['loadfile', str(movie)]], {'resolved': '2d', 'guessed': True}, path=str(movie))
+    step('preview-seek-bar', [], {'output': 'preview'}, properties={'user-data/osc/visibility': 'auto'})
     for mode in ['2d', 'hsbs', 'fsbs', 'vr180', 'vr360', 'vr180tb', 'vr360tb']:
         step(f'mode-{mode}', [['script-message', 'xreal-mode', mode]], {'resolved': mode},
              eye_aspect=16/9 if mode in ('2d', 'hsbs') else 8/9)
@@ -39,6 +40,16 @@ with tempfile.TemporaryDirectory(prefix='xreal-', dir='/tmp') as directory:
         step(f'output-{output}', [['script-message', 'xreal-output', 'auto'],
                                  ['script-message', 'xreal-display', output]], {'output': output}, aspect=ratio,
              mono=1 if output == 'preview' else 0)
+    # A 1920x1080 XREAL display may be glasses in their 2D mode: 2D video
+    # plays as one ordinary picture with a seek bar, stereo video is split.
+    step('half-display-2d', [['script-message', 'xreal-mode', '2d'],
+                             ['script-message', 'xreal-display', 'half']], {'resolved': '2d', 'output': 'mono'},
+         aspect=16/9, mono=1, properties={'user-data/osc/visibility': 'auto'})
+    step('half-display-stereo', [['script-message', 'xreal-mode', 'hsbs']], {'resolved': 'hsbs', 'output': 'half'},
+         aspect=16/9, mono=0, properties={'user-data/osc/visibility': 'never'})
+    step('full-display-2d', [['script-message', 'xreal-mode', '2d'],
+                             ['script-message', 'xreal-display', 'full']], {'resolved': '2d', 'output': 'full'},
+         aspect=32/9, mono=0, properties={'user-data/osc/visibility': 'never'})
     step('output-mono', [['script-message', 'xreal-display', 'full'],
                          ['script-message', 'xreal-output', 'mono']], {'output': 'mono'}, aspect=16/9, mono=1)
     step('output-auto', [['script-message', 'xreal-output', 'auto'],

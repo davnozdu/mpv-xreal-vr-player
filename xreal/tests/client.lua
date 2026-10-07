@@ -45,6 +45,9 @@ timer = mp.add_periodic_timer(0.05, function()
         local opts = mp.get_property('glsl-shader-opts', '')
         if not opts:find('xreal_mono=' .. step.mono, 1, true) then matches = false end
     end
+    for name, value in pairs(step.properties or {}) do
+        if mp.get_property_native(name) ~= value then matches = false end
+    end
     if matches then
         tests[#tests + 1] = {test=step.name, passed=true}
         next_step()

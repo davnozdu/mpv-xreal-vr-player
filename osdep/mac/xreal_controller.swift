@@ -16,7 +16,7 @@ class XREALController: NSObject {
         try? FileManager.default.createDirectory(atPath: cache, withIntermediateDirectories: true)
         let arguments = [CommandLine.arguments[0], "--no-config", "--load-scripts=no",
                 "--script=\(resources)/xreal.lua", "--glsl-shaders=\(resources)/xreal.glsl",
-                "--input-conf=\(resources)/input.conf", "--script-opts=xreal-prefs=\(state)/preferences.json,xreal-shaders=\(resources),xreal-autofs=yes,xreal-autodecode=yes",
+                "--input-conf=\(resources)/input.conf", "--script-opts=xreal-prefs=\(state)/preferences.json,xreal-shaders=\(resources),xreal-autofs=yes,xreal-autodecode=yes,osc-idlescreen=no",
                 "--watch-later-directory=\(state)/watch_later", "--gpu-shader-cache-dir=\(cache)/shaders",
                 "--icc-cache-dir=\(cache)/icc",
                 "--log-file=\(NSHomeDirectory())/Library/Logs/XREAL-VR-Player\(preview ? "-Preview" : "").log",
@@ -27,7 +27,7 @@ class XREALController: NSObject {
                 "--hwdec=auto-safe", "--ao=coreaudio", "--vd-lavc-threads=0",
                 "--demuxer-max-bytes=256MiB", "--demuxer-readahead-secs=10",
                 "--video-aspect-override=16:9", "--autofit=1100x700", "--native-fs=no",
-                "--osc=no", "--osd-level=0", "--sub=no", "--title=XREAL VR Player\(preview ? " Test" : "")",
+                "--osd-level=0", "--sub=no", "--title=XREAL VR Player\(preview ? " Test" : "")",
                 // Built-in OSD menus and yt-dlp support are unusable split
                 // between two eyes; skipping them opens movies sooner.
                 "--ytdl=no", "--load-stats-overlay=no", "--load-console=no", "--load-auto-profiles=no",
@@ -83,12 +83,12 @@ class XREALController: NSObject {
         Плеер автоматически выбирает дисплей XREAL и формат вывода.
 
         В меню XREAL выбирается формат фильма. Авто определяет формат по имени и размеру кадра: обычное видео без пометок SBS/3D/180/360 показывается как 2D, для немаркированного 8K 2:1 предполагается VR180 SBS. Если картинка неверная, выберите формат вручную — выбор запоминается для файла.
-        Если очки включены в обычный 2D-режим, выберите «Вывод: без 3D».
+        Обычное 2D-видео на очках 1920×1080 показывается одной картинкой, как в обычном плеере. Стереофильмы с пометкой SBS/3D/180/360 в имени делятся на два глаза автоматически.
 
-        Пробел — пауза; ←/→ — перемотка; W/A/S/D — обзор панорамы;
+        Пробел — пауза; ←/→ или шкала внизу экрана — перемотка; W/A/S/D — обзор панорамы;
         [ / ] — угол обзора; R — центр; E — поменять глаза; H — подсказка.
 
-        Eye/3DoF/6DoF закрепляют экран силами очков. Данные позы головы для обзора панорамы эта версия не получает. Субтитры и обычный OSC отключены, чтобы не пересекать границу глаз.
+        Eye/3DoF/6DoF закрепляют экран силами очков. Данные позы головы для обзора панорамы эта версия не получает. Субтитры отключены. Шкала перемотки показывается только в обычном виде без 3D, чтобы не пересекать границу глаз.
         """
         alert.runModal()
     }

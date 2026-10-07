@@ -74,12 +74,26 @@ local function auto_mode(params)
 end
 
 local function actual_output()
-    return output_override == 'auto' and display or output_override
+    if output_override ~= 'auto' then return output_override end
+    -- A 1920x1080 XREAL display is either the glasses' ordinary 2D mode or
+    -- Half SBS. Play 2D video like a normal player; only split stereo files.
+    if display == 'half' and resolved == '2d' then return 'mono' end
+    return display
 end
 
 -- One view for the Mac screen or for glasses switched to their 2D mode.
 local function is_mono(output)
     return output == 'preview' or output == 'mono'
+end
+
+-- The seek bar is only usable in a single view: split between two eyes it
+-- would be cut in half.
+local osc_mode
+local function update_osc(output)
+    local wanted = is_mono(output) and 'auto' or 'never'
+    if osc_mode == wanted then return end
+    osc_mode = wanted
+    mp.commandv('script-message', 'osc-visibility', wanted, 'no_osd')
 end
 
 local function draw()
@@ -119,7 +133,11 @@ local function apply()
     -- video-params includes our output aspect override. Read the decoder's
     -- original parameters so changing the output cannot distort each eye.
     local params = mp.get_property_native('video-dec-params')
+    if params and params.w and params.h then
+        if mode == 'auto' then resolved, guessed = auto_mode(params) else resolved, guessed = mode, false end
+    end
     local output = actual_output()
+    update_osc(output)
     mp.set_property('video-aspect-override', output == 'full' and '32:9' or '16:9')
     if o.shaders ~= '' then
         local shader = o.shaders .. (is_mono(output) and '/xreal-preview.glsl' or '/xreal.glsl')
@@ -129,7 +147,6 @@ local function apply()
         end
     end
     if not params or not params.w or not params.h then draw(); return end
-    if mode == 'auto' then resolved, guessed = auto_mode(params) else resolved, guessed = mode, false end
     local dar = (params.dw or params.w) / math.max(1, params.dh or params.h)
     local aspect = (resolved == 'hsbs' or resolved == '2d') and dar or dar * 0.5
     mp.set_property('glsl-shader-opts', string.format(
@@ -189,6 +206,7 @@ mp.register_event('start-file', function()
     end
     local entry = preferences[mp.get_property('path', '')]
     mode = type(entry)=='table' and valid[entry.mode] and entry.mode or 'auto'
+    resolved, guessed = '2d', false
     swapped = type(entry)=='table' and entry.swapped == true or false
     yaw=0; pitch=0; fov=70
 end)

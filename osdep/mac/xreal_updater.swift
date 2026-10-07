@@ -41,9 +41,42 @@ final class XREALUpdater: @unchecked Sendable {
             Bundle.main.object(forInfoDictionaryKey: "XREALDevelopmentPreview") as? Bool == true {
             return
         }
+        forgetOtherCopies()
         // Leave startup and the first frames of a movie alone.
         DispatchQueue.main.asyncAfter(deadline: .now() + 20) { self.check() }
         Timer.scheduledTimer(withTimeInterval: 60 * 60, repeats: true) { [weak self] _ in self?.check() }
+    }
+
+    // Finder's "Open With" lists every copy Launch Services has ever seen,
+    // with versions once they differ: previous installs, opened DMGs, copies
+    // in Downloads. The copy installed in Applications unregisters the
+    // others, unless one of them is newer.
+    func forgetOtherCopies() {
+        let fm = FileManager.default
+        let app = Bundle.main.bundleURL.standardizedFileURL
+        let folders = ["/Applications", NSHomeDirectory() + "/Applications"]
+        guard let id = Bundle.main.bundleIdentifier,
+              folders.contains(app.deletingLastPathComponent().path) else { return }
+        let current = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
+        DispatchQueue.global(qos: .utility).async {
+            let others = NSWorkspace.shared.urlsForApplications(withBundleIdentifier: id).filter {
+                let url = $0.standardizedFileURL
+                guard url.path != app.path else { return false }
+                let version = Bundle(url: url)?.object(forInfoDictionaryKey: "CFBundleShortVersionString")
+                return !self.isNewer(version as? String ?? "0", than: current) || !fm.fileExists(atPath: url.path)
+            }
+            if others.isEmpty { return }
+            let lsregister = Process()
+            lsregister.executableURL = URL(fileURLWithPath: XREALUpdater.lsregister)
+            lsregister.arguments = others.flatMap { ["-u", $0.path] }
+            do {
+                try lsregister.run()
+                lsregister.waitUntilExit()
+                DispatchQueue.main.async { self.log.verbose("Unregistered \(others.count) other copies of the app") }
+            } catch {
+                DispatchQueue.main.async { self.log.warning("Could not unregister other copies: \(error)") }
+            }
+        }
     }
 
     func check() {
